@@ -1,0 +1,4 @@
+# Exact certificate independently published by UIDAI; see provenance.json.
+e0304b9e61ee3640ecddae2db4b617f2e2678f57dbc2826c2f86ac5c04f277df
+# UIDAI official 2021 publication; historical evidence is still required for an expired signer.
+e0f0f869d32efc7e80fae2223717a56dcf8b616f820b542a49e5bd5abf1c0f7d
