@@ -1,0 +1,26 @@
+{
+  "checked_at_utc": "2026-10-20T08:18:47.931139+00:00",
+  "uidai_publication_page": "https://uidai.gov.in/en/data-and-download",
+  "uidai_publication_url": "https://backend.uidai.gov.in/get/files/media/document/2026-07/uidai_offline_publickey_2026.cer",
+  "uidai_signer_sha256": "e0304b9e61ee3640ecddae2db4b617f2e2678f57dbc2826c2f86ac5c04f277df",
+  "uidai_publication_scope": "Published as offline e-KYC public key; exact DER certificate match to the PDF signer was established independently. Certificate includes Microsoft document signing and Adobe authentic documents EKUs.",
+  "root_publication_url": "https://www.cca.gov.in/cca/sites/default/files/files/CCAIndia2022.cer",
+  "root_sha256": "9a3fd3176798e842ddcb12c262f11cfacca70a8b84c6ea6fda30842a95a94cd8",
+  "intermediates_source": "Embedded public certificates, authenticated by verifying issuer signatures to the independently downloaded CCA root. Not treated as trust anchors.",
+  "validation": "Current pyHanko certificate path validation with revocation_mode=require and allow_fetching=False passed.",
+  "crl_urls": {
+    "cca-india-2022.crl": "https://www.cca.gov.in/rw/resources/CCAIndia2022Latest.crl",
+    "ncode-ca-2022.crl": "http://www.ncodesolutions.com/repository/ncodeca22.crl",
+    "ncode-subca-dsc-2022.crl": "http://www.ncodesolutions.com/repository/ncodeca22subca1.crl"
+  },
+  "transport_note": "nCode HTTPS failed certificate-chain validation. Public CRLs were fetched over HTTP and authenticated cryptographically with verified issuer keys; TLS validation was not disabled.",
+  "files_sha256": {
+    "roots/CCAIndia2022.cer": "9a3fd3176798e842ddcb12c262f11cfacca70a8b84c6ea6fda30842a95a94cd8",
+    "intermediates/ncode-ca-2022.cer": "89277300f4ca8511d6b4585d62c4ff6f765477169928c5bef49a88958a392595",
+    "intermediates/ncode-subca-dsc-2022.cer": "ea25d9b63d0bd90fa74e9624ee94f18c9ef930c55a2f3b05e06a634a86bd9b29",
+    "signers/uidai-06-2026.cer": "e0304b9e61ee3640ecddae2db4b617f2e2678f57dbc2826c2f86ac5c04f277df",
+    "crls/cca-india-2022.crl": "fc4567e5f396ff7eb270087539861ccf8fcd759132558d50b33482db99ac7f59",
+    "crls/ncode-ca-2022.crl": "a18c137d4fc0fbca292a7696e023eb7d073ffeb28a0693fdb08d32d6b077832f",
+    "crls/ncode-subca-dsc-2022.crl": "dc6d5889b956d1acdf5ab91e4bcaeb1b878b8738aa27c464e63787964524bb85"
+  }
+}

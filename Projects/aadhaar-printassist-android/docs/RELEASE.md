@@ -1,0 +1,13 @@
+# Android build and release preparation
+
+Development toolchain: JDK 17, Gradle wrapper 8.11.1, Android Gradle Plugin 8.9.2, Kotlin 1.9.24 with Compose compiler 1.5.14, compile/target SDK 35, minimum SDK 28. These are pinned compatible development versions, not a claim of latest release. See [AGP compatibility](https://developer.android.com/build/releases/agp-8-9-0-release-notes) and [Compose compiler compatibility](https://developer.android.com/jetpack/androidx/releases/compose-kotlin).
+
+The source ZIP includes the Gradle wrapper, app code, tests and docs. No SDK, caches, private customer PDFs or signing key is included. Android Studio configures the local SDK path. Run `./gradlew :app:assembleDebug` (Windows: `gradlew.bat`) for a debug APK. Run `:app:connectedDebugAndroidTest` with a running emulator/test device.
+
+For a future release, choose a permanent application ID, then use Android Studio's Generate Signed Bundle / APK flow to create an upload key and signed AAB. Keep the key outside this repository and out of chat; use Play App Signing and protected CI secrets if CI is adopted. `:app:bundleRelease` alone does not supply a release identity or Play qualification.
+
+The core verification, rendering, print and export paths are implemented and tested within the documented profile. Before publication, test Android 9 and current devices, accessibility, large fonts, offline use, low memory, large/hostile PDFs, process death and resumed sessions. Audit pinned/transitive dependencies and licenses, APK size and any native library requirements. Recheck current target SDK and testing requirements in [Play Console documentation](https://support.google.com/googleplay/android-developer/answer/9859152?hl=en); API 35 in this prototype is not a guarantee of future submission eligibility.
+
+Prepare an accurate privacy policy, Data safety declaration, content rating, support contact and independent branding. The current prototype requests no network access or analytics; future networking changes require reassessing declarations and consent. Describe the supported validation profile and its limitations accurately; do not claim complete PAdES or Adobe equivalence. Distribute the provided debug APK only for development evaluation.
+
+Bouncy Castle is explicitly pinned to 1.86, overriding PDFBox-Android's older transitive dependency. The version is published on the [official download page](https://www.bouncycastle.org/download/bouncy-castle-java/). PDFBox-Android remains at its upstream published 2.0.27.0 release; this older parser is a release risk requiring audit or replacement/isolation before production qualification.

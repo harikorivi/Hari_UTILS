@@ -1,0 +1,24 @@
+{
+  "checked_at_utc": "2026-10-20T10:15:06.452187+00:00",
+  "uidai_certificate_url": "https://backend.uidai.gov.in/get/files/media/document/2026-07/uidai_offline_publickey_26022021.cer",
+  "uidai_certificate_sha256": "e0f0f869d32efc7e80fae2223717a56dcf8b616f820b542a49e5bd5abf1c0f7d",
+  "uidai_certificate_exact_match_to_embedded_signer": true,
+  "root_url": "https://www.cca.gov.in/cca/sites/default/files/files/CCAIndia2014.cer",
+  "issuer_archive_url": "http://www.ncodesolutions.com/repository/archival/(n)Code-SolutionsCA-2014.zip",
+  "issuer_archive_entry": "(n)Code Solutions CA - 2014/(n)Code  CA 2014.cer",
+  "chain_checks": "UIDAI signer -> nCode Solutions CA 2014 -> independently downloaded CCA India 2014; all issuer signatures verified.",
+  "crl_issuer_signatures_verified": true,
+  "crl_urls": [
+    "http://www.ncodesolutions.com/repository/ncodeca14.crl",
+    "https://www.cca.gov.in/rw/resources/CCAIndia2014Latest.crl"
+  ],
+  "historical_limit": "These final CRLs were published after signer expiry. No trusted signature/document timestamp exists in the test PDF. No proof of historical non-revocation at an independent signing time is asserted.",
+  "rejected_endpoint": "The current /repository/ncodeca14.der URL returned a different 2022 sub-CA certificate and was not accepted as this historical issuer.",
+  "files_sha256": {
+    "roots/CCAIndia2014.cer": "60109bc6c38328598a112c7a25e38b0f23e5a7511cb815fb64e0c4ff05db7df7",
+    "intermediates/ncode-ca-2014.cer": "8198bbae38ace5e1038cc3b36b3e6be584c534a3da116401eaf28c17f73efdbf",
+    "signers/uidai-05-2021.cer": "e0f0f869d32efc7e80fae2223717a56dcf8b616f820b542a49e5bd5abf1c0f7d",
+    "historical-crls/ncode-ca2014-final.crl": "1e282f955f4eb5d70f124ce324b973adda879a129926538cfc17b680a1634408",
+    "historical-crls/cca-india2014-final.crl": "5a8511cdf9c44bed63179f024631940944256aa3a667ca6ee92e62d8b46f01e1"
+  }
+}
