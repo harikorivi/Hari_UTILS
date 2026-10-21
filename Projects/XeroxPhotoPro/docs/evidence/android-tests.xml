@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.xeroxphotopro.CameraCaptureTest" tests="10" failures="0" errors="0" skipped="0" time="27.106" timestamp="2026-10-21T17:13:04" hostname="localhost">
+  <properties>
+    <property name="device" value="CycleSyncApi35(AVD) - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="cameraXCapturesDecodableImage" classname="com.xeroxphotopro.CameraCaptureTest" time="8.175" />
+  <testcase name="shareUsesRestrictedContentUriWithReadGrantAndDecodableFile" classname="com.xeroxphotopro.WorkflowTest" time="2.383" />
+  <testcase name="customSinglePhotoAndMinMarginsPreserveSize" classname="com.xeroxphotopro.WorkflowTest" time="2.055" />
+  <testcase name="launchShowsCaptureGalleryAndMaximum" classname="com.xeroxphotopro.WorkflowTest" time="1.509" />
+  <testcase name="importAutomaticallyPreviewsMaximumAndReportsQuality" classname="com.xeroxphotopro.WorkflowTest" time="1.471" />
+  <testcase name="exportAllFormatsIsSingleA4WithDensityAndRepeatedExportsSucceed" classname="com.xeroxphotopro.WorkflowTest" time="4.055" />
+  <testcase name="orientationAndActivityRecreationRetainCropAndReducedCount" classname="com.xeroxphotopro.WorkflowTest" time="1.641" />
+  <testcase name="legacySettingsMigrateAndFractionalCustomSizePersistsExactly" classname="com.xeroxphotopro.WorkflowTest" time="1.541" />
+  <testcase name="lowResolutionAndLargeSourceImportsAreHandled" classname="com.xeroxphotopro.WorkflowTest" time="1.401" />
+  <testcase name="overflowIsRejectedAndUseMaximumAppliesPendingOrientation" classname="com.xeroxphotopro.WorkflowTest" time="2.209" />
+</testsuite>

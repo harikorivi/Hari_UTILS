@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.xeroxphotopro.core.LayoutTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-21T17:06:47" hostname="Haris-MacBook-Pro.local" time="0.08">
+  <properties/>
+  <testcase name="all combinations fit inside margins with nonoverlapping external marks" classname="com.xeroxphotopro.core.LayoutTest" time="0.064"/>
+  <testcase name="geometry reports occupied and remaining space deterministically" classname="com.xeroxphotopro.core.LayoutTest" time="0.0"/>
+  <testcase name="custom one photo edge and no fit are handled" classname="com.xeroxphotopro.core.LayoutTest" time="0.001"/>
+  <testcase name="real feedback 24 square photos is rejected at 15 not paginated" classname="com.xeroxphotopro.core.LayoutTest" time="0.01"/>
+  <testcase name="reduced counts retain dimensions and overflow never silently shrinks" classname="com.xeroxphotopro.core.LayoutTest" time="0.001"/>
+  <testcase name="auto selects landscape when better and portrait on ties" classname="com.xeroxphotopro.core.LayoutTest" time="0.0"/>
+  <testcase name="invalid values and guide gaps fail clearly" classname="com.xeroxphotopro.core.LayoutTest" time="0.003"/>
+  <testcase name="default selects portrait maximum 30 instead of landscape 28" classname="com.xeroxphotopro.core.LayoutTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

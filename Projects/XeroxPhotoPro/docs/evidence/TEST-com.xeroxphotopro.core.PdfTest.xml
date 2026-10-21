@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.xeroxphotopro.core.PdfTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-21T17:06:47" hostname="Haris-MacBook-Pro.local" time="1.239">
+  <properties/>
+  <testcase name="one huge custom photo has exact physical size" classname="com.xeroxphotopro.core.PdfTest" time="0.485"/>
+  <testcase name="maximum sheet renders and shares one embedded image" classname="com.xeroxphotopro.core.PdfTest" time="0.217"/>
+  <testcase name="independent parser confirms one page exact A4 and every photo matrix" classname="com.xeroxphotopro.core.PdfTest" time="0.537"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
