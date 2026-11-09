@@ -12,6 +12,7 @@ import com.xeroxphotopro.export.*
 import com.xeroxphotopro.image.PhotoProcessor
 import com.xeroxphotopro.image.BackgroundProcessor
 import com.xeroxphotopro.image.PersonMask
+import com.xeroxphotopro.image.EdgeMode
 import com.xeroxphotopro.storage.DraftStore
 import kotlinx.coroutines.*
 import java.io.File
@@ -19,19 +20,33 @@ import kotlin.math.min
 
 data class OverflowRequest(val config: SheetConfig, val maximum: Int, val explanation: String)
 
-class PhotoViewModel(application: Application) : AndroidViewModel(application) {
+class PhotoViewModel @JvmOverloads constructor(application: Application, slot: Int = 0) : AndroidViewModel(application) {
     var screen by mutableStateOf("setup")
-    private val store = DraftStore(application)
+    private val store = DraftStore(application, slot)
+    var twoPhotoMode by mutableStateOf(store.twoPhotoMode()); private set
+    fun updateTwoPhotoMode(enabled: Boolean) {
+        if (busy) return
+        twoPhotoMode=enabled; store.saveTwoPhotoMode(enabled)
+    }
+    var framingTarget by mutableStateOf(store.framing()); private set
+    fun updateFraming(target: FramingTarget) = task {
+        framingTarget=target;store.saveFraming(target)
+        photo?.let { autoCropInternal(it) };prepared=null;originalPrepared=null;checks=emptyList()
+    }
     var personName by mutableStateOf(store.personName()); private set
     fun updatePersonName(value: String) {
         if (busy || photo == null) return
         personName = value.filterNot { it.isISOControl() }.take(80)
         store.savePersonName(personName)
     }
-    fun suggestedFileName(format: ExportFormat): String = "${ExportName.prefix(personName)}${System.currentTimeMillis()}.${format.extension}"
+    private fun exportName(secondName: String) = if (twoPhotoMode) "${personName.ifBlank { "Photo1" }}-${secondName.ifBlank { "Photo2" }}" else personName
+    fun suggestedFileName(format: ExportFormat, secondName: String = ""): String = "${ExportName.prefix(exportName(secondName))}${System.currentTimeMillis()}.${format.extension}"
     var config by mutableStateOf(store.settings()); private set
     var photo by mutableStateOf<Bitmap?>(null); private set
     var crop by mutableStateOf<Crop?>(null); private set
+    var originalPrepared by mutableStateOf<Bitmap?>(null); private set
+    var repairs by mutableStateOf(store.repairs()); private set
+    var edgeMode by mutableStateOf(store.edgeMode()); private set
     var prepared by mutableStateOf<Bitmap?>(null); private set
     var backgroundColor by mutableStateOf<Int?>(store.background()); private set
     private var personMask: PersonMask? = null
@@ -56,7 +71,7 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
                 setPhoto(it)
                 saved?.let { (z, x, y) -> adjust(z, x, y) }
                 prepareInternal()
-            }
+            } ?: run { config = SheetConfig(); store.saveSettings(config) }
         }
     }
     private fun task(block: suspend () -> Unit) {
@@ -72,14 +87,14 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
     }
     private suspend fun setPhoto(bitmap: Bitmap) {
         personMask = null
-        photo = bitmap; prepared = null; checks = emptyList()
+        photo = bitmap; prepared = null; originalPrepared = null; checks = emptyList()
         crop = CropEngine.manual(bitmap.width, bitmap.height, config.photo)
         zoom = 1.0; panX = .5; panY = .5
         autoCropInternal(bitmap)
     }
     private suspend fun autoCropInternal(bitmap: Bitmap) {
         try {
-            val result = withContext(Dispatchers.Default) { PhotoProcessor.faceCrop(bitmap, config.photo) }
+            val result = withContext(Dispatchers.Default) { PhotoProcessor.faceCrop(bitmap, config.photo, framingTarget) }
             crop = result.first; quality = result.second
             val base = CropEngine.manual(bitmap.width, bitmap.height, config.photo)
             zoom = (base.width / result.first.width).coerceIn(1.0, 5.0)
@@ -94,17 +109,21 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
             val bitmap = withContext(Dispatchers.IO) { PhotoProcessor.load(getApplication(), uri) }
             withContext(Dispatchers.IO) { store.savePhoto(bitmap) }
             // Every new customer begins with the maximum; preserve explicitly selected orientation.
+            repairs = emptyList()
+            framingTarget=FramingTarget()
+            edgeMode = EdgeMode.NATURAL
             personName = ""
             backgroundColor = null
-            config = config.copy(copies = null); store.saveSettings(config)
+            config = SheetConfig(); store.saveSettings(config)
             setPhoto(bitmap); prepareInternal(); onReady()
         } finally { if (temporaryCapture && uri.scheme == "file") uri.path?.let { File(it).delete() } }
     }
-    fun autoCrop() = task { photo?.let { autoCropInternal(it) }; prepared = null; checks = emptyList() }
+    fun autoCrop() = task { photo?.let { autoCropInternal(it) }; prepared = null; originalPrepared = null; checks = emptyList() }
     fun rotate() = task {
         photo?.let { source ->
             val rotated = withContext(Dispatchers.Default) { PhotoProcessor.rotate(source) }
             withContext(Dispatchers.IO) { store.savePhoto(rotated, resetBackground = false) }
+            repairs = repairs.map { it.clockwise() }; store.saveRepairs(repairs)
             setPhoto(rotated)
         }
     }
@@ -112,10 +131,11 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
         val bitmap = photo ?: return
         zoom = z.coerceIn(1.0, 5.0); panX = x.coerceIn(0.0, 1.0); panY = y.coerceIn(0.0, 1.0)
         crop = CropEngine.manual(bitmap.width, bitmap.height, config.photo, zoom, panX, panY)
-        prepared = null; checks = emptyList(); store.saveCrop(zoom, panX, panY)
+        prepared = null; originalPrepared = null; checks = emptyList(); store.saveCrop(zoom, panX, panY)
     }
     fun configure(c: SheetConfig): Boolean {
         if (busy) return false
+        if (twoPhotoMode && c != SheetConfig()) { message="Two-photo mode uses 35 × 45 mm and 15 copies per photo. Switch to Single photo for custom layout."; return false }
         return try {
             LayoutEngine.calculate(c)
             val changedSize = c.photo != config.photo
@@ -131,47 +151,66 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
         val c = crop ?: return 0
         return min(c.width / config.photo.width * 25.4, c.height / config.photo.height * 25.4).toInt()
     }
-    fun setBackground(color: Int?) = task {
+    suspend fun repairPreview(edits: List<MaskStroke>): Bitmap = withContext(Dispatchers.Default) {
+        val source=photo ?: error("Select a photo first.")
+        BackgroundProcessor.replace(originalPrepared ?: error("Prepare the photo first."),crop!!,
+            source.width,source.height,personMask ?: error("Choose a replacement background first."),
+            backgroundColor ?: error("Choose a replacement background first."),edgeMode,edits)
+    }
+    fun applyRepairs(edits: List<MaskStroke>, onReady: () -> Unit) = task {
+        prepareInternal(edits=edits)
+        repairs=edits; store.saveRepairs(edits)
+        onReady()
+    }
+    fun setBackground(color: Int?, mode: EdgeMode = edgeMode) = task {
         // Commit selection only after successful processing; a failure keeps the prior preview.
-        prepareInternal(color)
+        prepareInternal(color, mode)
+        edgeMode = mode; store.saveEdgeMode(mode)
         backgroundColor = color
         store.saveBackground(color)
     }
-    private suspend fun prepareInternal(color: Int? = backgroundColor) {
+    private suspend fun prepareInternal(color: Int? = backgroundColor, mode: EdgeMode = edgeMode, edits: List<MaskStroke> = repairs) {
         val source = photo ?: error("Capture or select a photo first.")
         val selected = crop ?: error("Choose a crop first.")
         LayoutEngine.calculate(config)
-        val image = withContext(Dispatchers.Default) { PhotoProcessor.render(source, selected, config.photo) }
-        val reviewed = withContext(Dispatchers.Default) { PhotoProcessor.validate(image, effectiveDpi) }
+        val image = originalPrepared ?: withContext(Dispatchers.Default) { PhotoProcessor.render(source, selected, config.photo) }
+        val reviewed = if (originalPrepared != null) checks.filterNot { it.label == "Background replacement" } else withContext(Dispatchers.Default) { PhotoProcessor.validate(image, effectiveDpi) }
         val result = if (color == null) image else withContext(Dispatchers.Default) {
             val mask = personMask ?: BackgroundProcessor.segment(source).also { personMask = it }
-            BackgroundProcessor.replace(image, selected, source.width, source.height, mask, color)
+            BackgroundProcessor.replace(image, selected, source.width, source.height, mask, color, mode, edits)
         }
+        originalPrepared = image
         prepared = result
         checks = reviewed + if (color == null) emptyList() else listOf(QualityCheck("Background replacement", CheckStatus.REVIEW,
             "Background edited. Inspect hair, ears and shoulders for missing detail or halos. Use Original if the document disallows editing. Source-photo checks above remain unchanged."))
     }
     fun prepare(onReady: () -> Unit) = task { prepareInternal(); onReady() }
-    fun export(uri: Uri, format: ExportFormat) = task {
-        val image = prepared ?: error("Review the crop and preview the sheet before exporting.")
+    private fun exportImages(secondImage: Bitmap?): List<Bitmap> {
+        val first=prepared ?: error("Review the first photo before exporting.")
+        val images=if(twoPhotoMode) listOf(first,secondImage ?: error("Add and review the second photo before exporting.")) else listOf(first)
+        PhotoSlots.validate(layout,images.size)
+        return images
+    }
+    fun export(uri: Uri, format: ExportFormat, secondImage: Bitmap? = null) = task {
+        val images = exportImages(secondImage)
         val layout = layout
         withContext(Dispatchers.IO) {
             getApplication<Application>().contentResolver.openOutputStream(uri, "wt")?.buffered()?.use {
-                SheetExporter.write(getApplication(), it, image, layout, format)
+                SheetExporter.write(getApplication(), it, images, layout, format)
             } ?: error("Unable to open the destination. Choose a different folder.")
         }
         message = "${format.name} saved: one A4 sheet. Print at Actual size / 100%. Measure the first photo with a ruler."
     }
-    fun share(format: ExportFormat, onReady: (Intent) -> Unit) = task {
-        val image = prepared ?: error("Review the crop and preview the sheet before sharing.")
+    fun share(format: ExportFormat, secondImage: Bitmap? = null, secondName: String = "", onReady: (Intent) -> Unit) = task {
+        val images = exportImages(secondImage)
         val layout = layout
         val app = getApplication<Application>()
         val file = withContext(Dispatchers.IO) {
             SheetExporter.cleanOldShares(app)
             val dir = File(app.cacheDir, "exports").apply { check(exists() || mkdirs()) }
-            val destination = File.createTempFile(ExportName.prefix(personName), ".${format.extension}", dir)
+            val destination = File.createTempFile(ExportName.prefix(exportName(secondName)), ".${format.extension}", dir)
             try {
-                destination.outputStream().buffered().use { SheetExporter.write(app, it, image, layout, format) }
+                destination.outputStream().buffered().use { SheetExporter.write(app, it, images, layout, format) }
                 destination
             } catch (e: Throwable) { destination.delete(); throw e }
         }
@@ -179,9 +218,13 @@ class PhotoViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun clearPhoto() = task {
         withContext(Dispatchers.IO) { store.delete() }
+        repairs = emptyList()
+        framingTarget=FramingTarget()
+        edgeMode = EdgeMode.NATURAL
         personName = ""
         backgroundColor = null; personMask = null
-        photo = null; crop = null; prepared = null; checks = emptyList()
+        photo = null; crop = null; prepared = null; originalPrepared = null; checks = emptyList()
+        config = SheetConfig(); store.saveSettings(config)
         message = "Working photo and temporary shared sheets deleted. Saved exports remain where you saved them."
     }
     fun notify(text: String) { message = text }

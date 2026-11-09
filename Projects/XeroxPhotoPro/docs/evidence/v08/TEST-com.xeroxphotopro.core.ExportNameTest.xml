@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.xeroxphotopro.core.ExportNameTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-25T16:05:20" hostname="Haris-MacBook-Pro.local" time="0.01">
+  <properties/>
+  <testcase name="namesAreReadableAndCannotBecomePaths" classname="com.xeroxphotopro.core.ExportNameTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

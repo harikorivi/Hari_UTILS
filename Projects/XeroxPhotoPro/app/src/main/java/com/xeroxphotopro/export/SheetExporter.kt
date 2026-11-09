@@ -16,17 +16,24 @@ enum class ExportFormat(val mime: String, val extension: String) {
 }
 object SheetExporter {
     fun write(context: Context, out: OutputStream, image: Bitmap, layout: SheetLayout, format: ExportFormat) {
+        write(context,out,listOf(image),layout,format)
+    }
+    fun write(context: Context, out: OutputStream, images: List<Bitmap>, layout: SheetLayout, format: ExportFormat) {
+        PhotoSlots.validate(layout,images.size)
         // Revalidate at export boundary as well as when editing; no writer supports overflow.
         val checked = LayoutEngine.calculate(layout.config)
         if (format == ExportFormat.PDF) {
-            val jpeg = ByteArrayOutputStream().also { check(image.compress(Bitmap.CompressFormat.JPEG, 97, it)) }.toByteArray()
-            PhotoPdf.write(out, checked, jpeg, image.width, image.height)
+            val encoded=images.map { image ->
+                val jpeg=ByteArrayOutputStream().also { check(image.compress(Bitmap.CompressFormat.JPEG,97,it)) }.toByteArray()
+                PdfPhoto(jpeg,image.width,image.height)
+            }
+            PhotoPdf.write(out,checked,encoded)
             return
         }
         var sheet: Bitmap? = null
         val temp = File.createTempFile("sheet-encoding-", ".tmp", context.cacheDir)
         try {
-            sheet = SheetRenderer.bitmap(image, checked)
+            sheet = SheetRenderer.bitmap(images, checked)
             temp.outputStream().buffered().use {
                 check(sheet.compress(if (format == ExportFormat.PNG) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 97, it)) { "Image encoding failed." }
             }

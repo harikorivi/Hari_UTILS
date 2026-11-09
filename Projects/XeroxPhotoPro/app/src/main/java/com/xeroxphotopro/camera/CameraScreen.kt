@@ -39,7 +39,7 @@ import androidx.compose.ui.Alignment
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
-fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
+fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit, faceGuidance: Boolean = true) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current
     var permission by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
@@ -62,7 +62,7 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
         onDispose { lifecycle.lifecycle.removeObserver(observer) }
     }
     var ready by remember { mutableStateOf(false) }
-    var guidance by remember { mutableStateOf("Center the face inside the guide") }
+    var guidance by remember { mutableStateOf(if(faceGuidance) "Center the face inside the guide" else "Keep the entire image in view; check focus and lighting") }
     var cameraError by remember { mutableStateOf<String?>(null) }
     val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FIT_CENTER } }
     val capture = remember(front) { ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).build() }
@@ -70,7 +70,7 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
     val currentPhoto by rememberUpdatedState(onPhoto)
     @Composable fun controls() {
         Text("Capture a clear photo", style = MaterialTheme.typography.titleLarge)
-        Text("Plain background • Even light • Full head and shoulders", style = MaterialTheme.typography.bodySmall)
+        Text(if(faceGuidance) "Plain background • Even light • Full head and shoulders" else "Any image • Even light • No automatic face processing", style = MaterialTheme.typography.bodySmall)
         if (!permission) {
             Text(if (permissionRequested) "Camera permission is off. Enable it in Android Settings or use Gallery." else "Allow camera access to take a photo.")
             Button(onClick = { request.launch(Manifest.permission.CAMERA) }) { Text("Allow camera") }
@@ -81,10 +81,10 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
             Text(cameraError ?: guidance, color = if (cameraError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
             Text("Guidance only • review the final crop", style = MaterialTheme.typography.labelSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { front = !front }, enabled = !capturing) { Text(if (front) "Rear" else "Front") }
-                OutlinedButton(onClick = { flash = !flash }, enabled = !capturing && flashAvailable) { Text(if (flash) "Flash on" else "Flash off") }
+                OutlinedButton(modifier = Modifier.weight(1f).heightIn(min = 52.dp), onClick = { front = !front }, enabled = !capturing) { Text(if (front) "Rear" else "Front") }
+                OutlinedButton(modifier = Modifier.weight(1f).heightIn(min = 52.dp), onClick = { flash = !flash }, enabled = !capturing && flashAvailable) { Text(if (flash) "Flash on" else "Flash off") }
             }
-            Button(modifier = Modifier.fillMaxWidth(), enabled = !capturing && bound && cameraError == null, onClick = {
+            Button(modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), enabled = !capturing && bound && cameraError == null, onClick = {
                 var file: File? = null
                 try {
                     file = File.createTempFile("capture-", ".jpg", context.cacheDir)
@@ -108,7 +108,7 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
         Box(modifier.background(Color.Black), contentAlignment = Alignment.Center) {
             if (permission) {
                 AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-                Canvas(Modifier.fillMaxSize()) {
+                if(faceGuidance) Canvas(Modifier.fillMaxSize()) {
                     // Match PreviewView FIT_CENTER: guides follow the image, not black letterboxing.
                     val width = minOf(size.width, size.height * frameAspect)
                     val height = width / frameAspect
@@ -136,17 +136,17 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
             }
         }
     }
-    if (permission) DisposableEffect(front, lifecycle) {
+    if (permission) DisposableEffect(front, lifecycle, faceGuidance) {
         val disposed = AtomicBoolean(false)
         val analyzing = AtomicBoolean(false)
         val executor = Executors.newSingleThreadExecutor()
-        val detector = FaceDetection.getClient(FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST).setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL).build())
+        val detector = if(faceGuidance) FaceDetection.getClient(FaceDetectorOptions.Builder().setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST).setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL).build()) else null
         val analysis = ImageAnalysis.Builder().setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
         val future = ProcessCameraProvider.getInstance(context)
         var provider: ProcessCameraProvider? = null
         val preview = Preview.Builder().build().also { it.setSurfaceProvider(previewView.surfaceProvider) }
         cameraError = null; ready = false; bound = false
-        analysis.setAnalyzer(executor) { frame ->
+        if(detector!=null) analysis.setAnalyzer(executor) { frame ->
             val media = frame.image
             if (disposed.get() || media == null || !analyzing.compareAndSet(false, true)) frame.close()
             else {
@@ -189,14 +189,15 @@ fun CameraScreen(onPhoto: (Uri) -> Unit, onBack: () -> Unit) {
         future.addListener({
             if (!disposed.get()) try {
                 provider = future.get()
-                val camera = provider?.bindToLifecycle(lifecycle, if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA, preview, capture, analysis)
+                val selector=if(front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                val camera = if(faceGuidance) provider?.bindToLifecycle(lifecycle,selector,preview,capture,analysis) else provider?.bindToLifecycle(lifecycle,selector,preview,capture)
                 flashAvailable = camera?.cameraInfo?.hasFlashUnit() == true
                 bound = true
             } catch (_: Exception) { cameraError = "Camera unavailable. Switch cameras or use a gallery photo." }
         }, mainExecutor)
         onDispose {
             disposed.set(true); analysis.clearAnalyzer(); provider?.unbind(preview, capture, analysis)
-            executor.shutdown(); if (!analyzing.get()) detector.close()
+            executor.shutdown(); if (!analyzing.get()) detector?.close()
         }
     }
 }

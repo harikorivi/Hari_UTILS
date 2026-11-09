@@ -40,3 +40,11 @@ Use Android 9 and at least one current vendor phone. Record model, Android versi
 6. If dimensions differ, investigate printer media/scaling/feed behavior. Do not compensate by stretching the source image or silently changing requested dimensions.
 
 No physical printing, portrait acceptance, vendor-wide compatibility or one-minute performance guarantee has been verified by the automated tests.
+
+## Two-photo A4 check (0.8.0)
+
+1. Open Custom sheet mode and choose Two photos · 15 + 15. Add a different portrait in each slot, with a name for each.
+2. Adjust each crop/background independently; confirm the other portrait is unchanged. Review the sheet: three rows of five copies per person.
+3. Save JPEG, PNG and PDF; inspect top/bottom order, one page, and both names in the filename.
+4. Print A4 at Actual size / 100%. Measure a top and bottom photo: 35 × 45 mm. Confirm printer margins are sufficient.
+5. Reopen the app and check both drafts. Switch to Single photo and back, then delete both working photos and confirm both slots are empty.

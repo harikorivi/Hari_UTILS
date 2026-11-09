@@ -60,3 +60,27 @@ User-authorized background replacement is now implemented with Original, White, 
 ## 0.4.0 optional person name
 
 Added a draft-scoped optional name on setup and preview. PDF/JPEG/PNG save suggestions and share display names use a common safe filename prefix. New-photo import and draft deletion reset the name; rotation preserves it. Multi-customer sheets remain deferred.
+
+## 0.5.0 mobile feedback — 2026-10-25
+
+The supplied screenshot showed 15 photos centered on A4 and a misleading six-row label. Layout now starts at the top-left safe inset; actual rows and columns describe the selected count. New jobs reset to 35 × 45 mm. Custom controls disclose crop, background, size, sheet layout and export settings only when opened. Save/Share remain visible in a bottom action bar. Large labelled touch targets replace horizontal option strips, and entire switch rows toggle. Multi-customer sheets remain deferred.
+
+## 0.6.0 JPEG default and background experience
+
+JPEG now defaults for save/share. Background selection uses named swatches with an explicit selected state, before/after comparison, detail zoom and RGB custom mixing. Source-color-guided mask refinement and optional Natural/Cleaner/Softer edge treatment replace plain mask upsampling. A perfect cutout is not guaranteed; original mode remains available. Multi-customer sheets stay deferred.
+
+## 0.7.0 missing-ear feedback
+
+Added manual original-pixel recovery for ears/edges that segmentation removed. The repair editor supplies Restore, Erase, Move/zoom, comparison, Undo/Reset and explicit Apply/Cancel. Repairs override cleanup strength and persist in the current draft. This does not claim to fix automatic ear segmentation for every photo. JPEG default, 35 × 45 mm new-photo default and top-left A4 packing remain. Multi-customer sheets remain deferred.
+
+## 0.8.0 explicit two-person authorization
+
+The latest request supersedes the earlier multi-customer deferral for a bounded two-photo layout: 15 copies at the top and 15 at the bottom. Added optional sheet-mode selection, independent drafts and edits, two-name filenames and consistent JPEG/PNG/PDF output. Single-photo mode and JPEG remain defaults. Arbitrary customer counts and mixed photo sizes are outside this feature.
+
+## 0.9.0 image quality priorities
+
+Replaced box-only automatic framing with eye/chin landmarks and configurable operator targets, explicit fallback/insufficient-space warnings, optional guides, and independent target persistence. Added conservative local foreground-color unmixing at uncertain boundaries, leaving alpha and opaque interiors unchanged. New drafts are lossless with old JPEG compatibility. Preserved the existing two-photo layout and export geometry. Added save/share metadata, control, crop-geometry, halo-error and lossless-draft tests. Real reference comparison uses an already exported outdoor portrait; it cannot certify original-photo ear preservation. Details: IMAGE_QUALITY_V09.md.
+
+## 0.10.0 Smart A4 Photo Layout Maker
+
+Added the explicitly requested separate general-image workflow inside the existing app. Supports one to twenty images, mixed sizes, exact quantities, ratio-based maximum batches, permitted rotation, five cutting styles and precise one-page exports. No face processing is applied in Smart mode. Original input bytes are kept privately; a 3508-pixel decode bound protects rendering memory. Existing passport layout algorithms are unchanged; PDF serialization is shared. Large two-column preset buttons replaced a nested horizontal selector after a UI test exposed inaccessible offscreen taps.

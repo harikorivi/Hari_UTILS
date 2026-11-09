@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceLandmark
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
@@ -12,29 +13,39 @@ import kotlinx.coroutines.tasks.await
 import kotlin.math.min
 
 object PhotoProcessor {
-    fun load(context: Context, uri: Uri): Bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, info, _ ->
+    fun load(context: Context, uri: Uri, maxEdge: Int = 2400): Bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, info, _ ->
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-        val scale = min(1.0, 2400.0 / maxOf(info.size.width, info.size.height))
+        val scale = min(1.0, maxEdge.toDouble() / maxOf(info.size.width, info.size.height))
         decoder.setTargetSize((info.size.width * scale).toInt().coerceAtLeast(1), (info.size.height * scale).toInt().coerceAtLeast(1))
     }
-    suspend fun faceCrop(bitmap: Bitmap, size: PhotoSize): Pair<Crop, String> {
+    suspend fun faceCrop(bitmap: Bitmap, size: PhotoSize, target: FramingTarget = FramingTarget()): Pair<Crop, String> {
         val detector = FaceDetection.getClient(FaceDetectorOptions.Builder()
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
             .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL).build())
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL).setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL).build())
         try {
             val faces = detector.process(InputImage.fromBitmap(bitmap, 0)).await()
             if (faces.size != 1) return CropEngine.manual(bitmap.width, bitmap.height, size) to
                 if (faces.isEmpty()) "No face detected. Retake or review the manual crop." else "Multiple faces detected. Retake with one person."
             val face = faces.single()
             val b = face.boundingBox
-            val crop = CropEngine.aroundFace(bitmap.width, bitmap.height, size, FaceBox(b.left.toDouble(), b.top.toDouble(), b.right.toDouble(), b.bottom.toDouble()))
+            val left=face.getLandmark(FaceLandmark.LEFT_EYE)?.position
+            val right=face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
+            val chin=face.getContour(FaceContour.FACE)?.points?.maxOfOrNull { it.y }?.toDouble()
+            val frontal=kotlin.math.abs(face.headEulerAngleZ)<=8 && kotlin.math.abs(face.headEulerAngleY)<=12 && kotlin.math.abs(face.headEulerAngleX)<=12
+            val anchor=if(left!=null && right!=null && chin!=null && frontal)
+                FaceAnchor((left.x+right.x)/2.0,(left.y+right.y)/2.0,chin) else null
+            val framing=FaceFraming.calculate(bitmap.width,bitmap.height,size,
+                FaceBox(b.left.toDouble(),b.top.toDouble(),b.right.toDouble(),b.bottom.toDouble()),anchor,target)
+            val crop=framing.crop
             val issues = buildList {
+                if(framing.constrained) add("Insufficient space for the selected passport photo framing. Please retake the photo or adjust manually.")
+                if(!framing.usedLandmarks) add("Reliable eye/chin landmarks unavailable. Approximate face-box crop; check framing manually.")
                 if (kotlin.math.abs(face.headEulerAngleZ) > 8 || kotlin.math.abs(face.headEulerAngleY) > 12 || kotlin.math.abs(face.headEulerAngleX) > 12) add("Keep the head straight and look at the camera.")
                 if ((face.leftEyeOpenProbability ?: 1f) < .5 || (face.rightEyeOpenProbability ?: 1f) < .5) add("Check that both eyes are open.")
                 if (b.left < crop.x || b.right > crop.x + crop.width || b.top < crop.y || b.bottom > crop.y + crop.height) add("Face reaches the crop edge. Retake from farther away.")
             }
-            return crop to (if (issues.isEmpty()) "One face detected. Review hair, chin, shoulders, lighting and sharpness." else issues.joinToString(" "))
+            return crop to (if (issues.isEmpty()) "Eyes aligned to ${(target.eyeLine*100).toInt()}%; eye-to-chin span ${(target.eyeToChin*100).toInt()}%. Check crown, hair and shoulders manually; these are operator guidance targets." else issues.joinToString(" "))
         } finally { detector.close() }
     }
     suspend fun validate(bitmap: Bitmap, sourceDpi: Int): List<QualityCheck> {

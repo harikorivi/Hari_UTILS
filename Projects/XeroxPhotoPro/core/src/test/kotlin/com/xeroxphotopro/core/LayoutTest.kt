@@ -4,6 +4,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class LayoutTest {
+    @Test fun `reduced copies pack from safe top left with actual rows and contiguous spare paper`() {
+        for (count in listOf(1,4,6,15,16,29,30)) {
+            val sheet=LayoutEngine.calculate(SheetConfig(copies=count))
+            assertEquals(6.0,sheet.placements.first().x,0.0)
+            assertEquals(6.0,sheet.placements.first().y,0.0)
+            assertEquals((count+4)/5,sheet.rows)
+            assertEquals(minOf(count,5),sheet.columns)
+            sheet.placements.forEachIndexed { i,p ->
+                assertEquals(6.0+(i%5)*38,p.x,0.0)
+                assertEquals(6.0+(i/5)*48,p.y,0.0)
+            }
+        }
+        val fifteen=LayoutEngine.calculate(SheetConfig(copies=15))
+        assertEquals(147.0,fifteen.placements.maxOf { it.y+it.height },0.0)
+        // No guides: exact specified margin still applies.
+        assertEquals(5.0,LayoutEngine.calculate(SheetConfig(copies=1,guides=false)).placements.first().y,0.0)
+    }
+
     @Test fun `default selects portrait maximum 30 instead of landscape 28`() {
         val c = SheetConfig()
         assertEquals(30, LayoutEngine.grid(c, Orientation.PORTRAIT).capacity)

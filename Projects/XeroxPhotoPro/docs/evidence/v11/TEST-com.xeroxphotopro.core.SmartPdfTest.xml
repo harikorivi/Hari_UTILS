@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.xeroxphotopro.core.SmartPdfTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-09T05:58:42" hostname="Haris-MacBook-Pro.local" time="0.026">
+  <properties/>
+  <testcase name="mixed size PDF has one precise page and correct image per placement" classname="com.xeroxphotopro.core.SmartPdfTest" time="0.026"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.xeroxphotopro.BackgroundTest" tests="20" failures="0" errors="0" skipped="1" time="41.041" timestamp="2026-10-25T16:08:53" hostname="localhost">
+  <properties>
+    <property name="device" value="CycleSyncApi35(AVD) - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="backgroundPersistenceResetAndRotationSave" classname="com.xeroxphotopro.BackgroundTest" time="0.008" />
+  <testcase name="maskInterpolationCropAlignmentAndOriginalPixels" classname="com.xeroxphotopro.BackgroundTest" time="0.002" />
+  <testcase name="replacementColorReachesEveryExport" classname="com.xeroxphotopro.BackgroundTest" time="0.56" />
+  <testcase name="colorGuidanceAlignsUncertainMaskAndRetainsConfidentInterior" classname="com.xeroxphotopro.BackgroundTest" time="0.034" />
+  <testcase name="bundledModelRejectsBlankImageWithoutNetwork" classname="com.xeroxphotopro.BackgroundTest" time="0.112" />
+  <testcase name="repairedEarRestoresOriginalPixelsEvenInCleanerMode" classname="com.xeroxphotopro.BackgroundTest" time="0.001" />
+  <testcase name="cameraXCapturesDecodableImage" classname="com.xeroxphotopro.CameraCaptureTest" time="8.407" />
+  <testcase name="shareUsesRestrictedContentUriWithReadGrantAndDecodableFile" classname="com.xeroxphotopro.WorkflowTest" time="2.031" />
+  <testcase name="customSinglePhotoAndMinMarginsPreserveSize" classname="com.xeroxphotopro.WorkflowTest" time="2.134" />
+  <testcase name="launchShowsCaptureGalleryAndMaximum" classname="com.xeroxphotopro.WorkflowTest" time="1.303" />
+  <testcase name="importAutomaticallyPreviewsMaximumAndReportsQuality" classname="com.xeroxphotopro.WorkflowTest" time="1.618" />
+  <testcase name="exportAllFormatsIsSingleA4WithDensityAndRepeatedExportsSucceed" classname="com.xeroxphotopro.WorkflowTest" time="3.793" />
+  <testcase name="fifteenCopiesAreTopAlignedAndCustomControlsAreOptIn" classname="com.xeroxphotopro.WorkflowTest" time="6.083" />
+  <testcase name="orientationAndActivityRecreationRetainCropAndReducedCount" classname="com.xeroxphotopro.WorkflowTest" time="1.621" />
+  <testcase name="twoPhotoSheetKeepsIndependentDraftsAndExportsAllFormats" classname="com.xeroxphotopro.WorkflowTest" time="3.522" />
+  <testcase name="realPortraitBackgroundWorkflow" classname="com.xeroxphotopro.WorkflowTest" time="1.497">
+    <skipped />
+  </testcase>
+  <testcase name="legacySettingsMigrateAndFractionalCustomSizePersistsExactly" classname="com.xeroxphotopro.WorkflowTest" time="0.89" />
+  <testcase name="optionalPersonNameIsUsedForSaveAndShareAndResetsWithPhoto" classname="com.xeroxphotopro.WorkflowTest" time="3.209" />
+  <testcase name="lowResolutionAndLargeSourceImportsAreHandled" classname="com.xeroxphotopro.WorkflowTest" time="1.546" />
+  <testcase name="overflowIsRejectedAndUseMaximumAppliesPendingOrientation" classname="com.xeroxphotopro.WorkflowTest" time="1.742" />
+</testsuite>

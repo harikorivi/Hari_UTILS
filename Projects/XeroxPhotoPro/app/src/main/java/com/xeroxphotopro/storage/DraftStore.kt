@@ -5,23 +5,34 @@ import android.graphics.Bitmap
 import android.net.Uri
 import com.xeroxphotopro.core.*
 import com.xeroxphotopro.image.PhotoProcessor
+import com.xeroxphotopro.image.EdgeMode
 import java.io.File
 
-class DraftStore(private val context: Context) {
-    private val draft = File(context.filesDir, "current-photo.jpg")
-    private val prefs = context.getSharedPreferences("shop", Context.MODE_PRIVATE)
-    fun loadPhoto(): Bitmap? = if (draft.exists()) PhotoProcessor.load(context, Uri.fromFile(draft)) else null
+class DraftStore(private val context: Context, private val slot: Int = 0) {
+    private val legacy = File(context.filesDir, if (slot == 0) "current-photo.jpg" else "second-photo.jpg")
+    private val draft = File(context.filesDir, if (slot == 0) "current-photo.png" else "second-photo.png")
+    private val prefs = context.getSharedPreferences(if (slot == 0) "shop" else "second-photo", Context.MODE_PRIVATE)
+    fun twoPhotoMode() = prefs.getBoolean("twoPhotoMode", false)
+    fun saveTwoPhotoMode(enabled: Boolean) { prefs.edit().putBoolean("twoPhotoMode", enabled).apply() }
+    fun framing(): FramingTarget = runCatching { FramingTarget(prefs.getString("eyeLineExact","0.40")!!.toDouble(),prefs.getString("eyeToChinExact","0.32")!!.toDouble()) }.getOrDefault(FramingTarget())
+    fun saveFraming(target: FramingTarget) { prefs.edit().putString("eyeLineExact",target.eyeLine.toString()).putString("eyeToChinExact",target.eyeToChin.toString()).apply() }
+    fun loadPhoto(): Bitmap? = (if(draft.exists()) draft else legacy).takeIf { it.exists() }?.let { PhotoProcessor.load(context,Uri.fromFile(it)) }
     fun savePhoto(photo: Bitmap, resetBackground: Boolean = true) {
-        val temp = File(context.filesDir, "current-photo.tmp")
+        val temp = File(context.filesDir, if (slot == 0) "current-photo.tmp" else "second-photo.tmp")
         try {
-            temp.outputStream().use { check(photo.compress(Bitmap.CompressFormat.JPEG, 98, it)) }
+            temp.outputStream().use { check(photo.compress(Bitmap.CompressFormat.PNG, 100, it)) }
             check(temp.renameTo(draft)) { "Unable to save draft. Check free storage." }
-            if (resetBackground) { saveBackground(null); savePersonName("") }
+            legacy.delete()
+            if (resetBackground) { saveFraming(FramingTarget()); saveBackground(null); saveEdgeMode(EdgeMode.NATURAL); saveRepairs(emptyList()); savePersonName("") }
             prefs.edit().remove("zoom").remove("panX").remove("panY").apply()
         } finally { temp.delete() }
     }
     fun personName(): String = prefs.getString("personName", "").orEmpty()
     fun savePersonName(name: String) { prefs.edit().putString("personName", name).apply() }
+    fun repairs(): List<MaskStroke> = com.xeroxphotopro.image.RepairCodec.decode(prefs.getString("repairs","[]") ?: "[]")
+    fun saveRepairs(strokes: List<MaskStroke>) { prefs.edit().putString("repairs",com.xeroxphotopro.image.RepairCodec.encode(strokes)).apply() }
+    fun edgeMode(): EdgeMode = runCatching { EdgeMode.valueOf(prefs.getString("edgeMode", "NATURAL")!!) }.getOrDefault(EdgeMode.NATURAL)
+    fun saveEdgeMode(mode: EdgeMode) { prefs.edit().putString("edgeMode", mode.name).apply() }
     fun background(): Int? = if (prefs.contains("background")) prefs.getInt("background", -1) else null
     fun saveBackground(color: Int?) {
         val edit = prefs.edit()
@@ -29,6 +40,10 @@ class DraftStore(private val context: Context) {
         edit.apply()
     }
     fun delete() {
+        check(!legacy.exists() || legacy.delete())
+        saveFraming(FramingTarget())
+        saveRepairs(emptyList())
+        saveEdgeMode(EdgeMode.NATURAL)
         saveBackground(null)
         check(!draft.exists() || draft.delete()) { "Unable to remove the current draft." }
         savePersonName("")

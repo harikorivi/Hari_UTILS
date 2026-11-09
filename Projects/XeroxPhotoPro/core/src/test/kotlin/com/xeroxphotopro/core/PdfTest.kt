@@ -14,6 +14,27 @@ import java.io.File
 import javax.imageio.ImageIO
 
 class PdfTest {
+    @Test fun `two portraits occupy exactly fifteen positions each on one A4`() {
+        val layout=LayoutEngine.calculate(SheetConfig())
+        val photos=listOf(Color.RED,Color.BLUE).map { color ->
+            val image=BufferedImage(100,130,BufferedImage.TYPE_INT_RGB)
+            image.createGraphics().apply { this.color=color; fillRect(0,0,100,130); dispose() }
+            PdfPhoto(ByteArrayOutputStream().also { ImageIO.write(image,"jpg",it) }.toByteArray(),100,130)
+        }
+        val bytes=ByteArrayOutputStream().also { PhotoPdf.write(it,layout,photos) }.toByteArray()
+        PDDocument.load(bytes).use { doc ->
+            assertEquals(1,doc.numberOfPages)
+            assertEquals(2,doc.getPage(0).resources.xObjectNames.count())
+            assertEquals(210.0,doc.getPage(0).mediaBox.width/POINTS_PER_MM,.001)
+            assertEquals(297.0,doc.getPage(0).mediaBox.height/POINTS_PER_MM,.001)
+            val image=PDFRenderer(doc).renderImageWithDPI(0,72f)
+            layout.placements.forEachIndexed { index,p ->
+                val color=Color(image.getRGB(mmToPoints(p.x+p.width/2).toInt(),mmToPoints(p.y+p.height/2).toInt()))
+                if(index<15) assertTrue(color.red>240 && color.blue<15) else assertTrue(color.blue>240 && color.red<15)
+            }
+        }
+        assertThrows(IllegalArgumentException::class.java) { PhotoSlots.validate(LayoutEngine.calculate(SheetConfig(copies=15)),2) }
+    }
     private fun pdf(c: SheetConfig): ByteArray {
         val image = BufferedImage(pixelsFor(c.photo.width), pixelsFor(c.photo.height), BufferedImage.TYPE_INT_RGB)
         image.createGraphics().apply { color = Color(18, 100, 100); fillRect(0, 0, image.width, image.height); color = Color.WHITE; fillRect(image.width / 4, image.height / 4, image.width / 2, image.height / 2); dispose() }

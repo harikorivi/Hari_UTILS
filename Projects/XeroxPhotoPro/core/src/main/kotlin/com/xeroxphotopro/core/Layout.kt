@@ -41,8 +41,8 @@ class CapacityExceeded(val requested: Int, val maximum: Int) : IllegalArgumentEx
 /** Constructed exclusively by the layout engine: one grid, one page, no overflow. */
 class SheetLayout internal constructor(val config: SheetConfig, val grid: Grid, val placements: List<Placement>) {
     val capacity get() = grid.capacity
-    val columns get() = grid.columns
-    val rows get() = grid.rows
+    val columns get() = min(placements.size, grid.columns)
+    val rows get() = (placements.size + grid.columns - 1) / grid.columns
     val width get() = grid.width
     val height get() = grid.height
 }
@@ -72,13 +72,10 @@ object LayoutEngine {
         require(grid.capacity > 0) { "This photo does not fit one A4 sheet. Reduce size, margins or spacing, or choose Auto orientation." }
         val copies = c.copies ?: grid.capacity
         if (copies > grid.capacity) throw CapacityExceeded(copies, grid.capacity)
-        // Center the selected grid footprint, without spreading gaps or changing photo size.
-        val usedColumns = min(copies, grid.columns)
-        val usedRows = (copies + grid.columns - 1) / grid.columns
-        val usedWidth = usedColumns * c.photo.width + (usedColumns - 1) * c.gap
-        val usedHeight = usedRows * c.photo.height + (usedRows - 1) * c.gap
-        val startX = (grid.width - usedWidth) / 2
-        val startY = (grid.height - usedHeight) / 2
+        // Pack against the printable top-left corner so unused paper remains contiguous.
+        // Include the existing guide allowance: never move ink outside the safe margin.
+        val startX = grid.inset
+        val startY = grid.inset
         val photos = (0 until copies).map { index ->
             Placement(startX + (index % grid.columns) * (c.photo.width + c.gap),
                 startY + (index / grid.columns) * (c.photo.height + c.gap), c.photo.width, c.photo.height)

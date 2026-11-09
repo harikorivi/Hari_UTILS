@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.xeroxphotopro.core.SmartLayoutTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-10-25T18:18:12" hostname="Haris-MacBook-Pro.local" time="0.109">
+  <properties/>
+  <testcase name="maximum uses complete ratio batches and includes every image" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.042"/>
+  <testcase name="all cutting styles retain exact dimensions in both orientations" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.008"/>
+  <testcase name="rotation requires consent and alternative orientation is offered" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.003"/>
+  <testcase name="overflow reports missing counts without returning partial sheet" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.0"/>
+  <testcase name="random mixed layouts never overlap escape margins or omit requested counts" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.045"/>
+  <testcase name="single maximum chooses practical grid and exact never adds copies" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.006"/>
+  <testcase name="two three and five image mixed size examples keep all copies" classname="com.xeroxphotopro.core.SmartLayoutTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
